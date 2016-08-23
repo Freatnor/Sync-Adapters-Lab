@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 
+import com.example.freatnor.external_contracts.StockPortfolioContract;
 import com.example.freatnor.presenters.StocksCursorAdapter;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if(id == STOCKS_LOADER){
-            return new CursorLoader(this, NewsContentProvider.CONTENT_URI, null, null, null, null);
+            return new CursorLoader(this, StockPortfolioContract.Stocks.CONTENT_URI, null, null, null, null);
         }
         return null;
     }
