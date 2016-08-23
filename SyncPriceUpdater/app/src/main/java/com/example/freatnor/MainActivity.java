@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String TAG = "MainActivity";
     public static final int STOCKS_LOADER = 25;
 
-    private ListView mArticlesListView;
+    private ListView mListView;
     private StocksCursorAdapter mCursorAdapter;
 
     // Constants
@@ -37,9 +37,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mListView = (ListView) findViewById(R.id.list_view);
+
         getSupportLoaderManager().initLoader(STOCKS_LOADER, null, this);
 
-        Cursor cursor = getContentResolver().query(CONTENT_URI, null, null, null, null);
+        Cursor cursor = getContentResolver().query(StockPortfolioContract.Stocks.CONTENT_URI, null, null, null, null);
 
         mCursorAdapter = new StocksCursorAdapter(this, cursor, true);
 
@@ -49,10 +51,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 //
 //        ContentResolver.requestSync(mAccount, NewsContentProvider.AUTHORITY, settingsBundle);
 
-        ContentResolver.setSyncAutomatically(mAccount,NewsContentProvider.AUTHORITY,true);
+        ContentResolver.setSyncAutomatically(mAccount,StockPortfolioContract.AUTHORITY,true);
         ContentResolver.addPeriodicSync(
                 mAccount,
-                NewsContentProvider.AUTHORITY,
+                StockPortfolioContract.AUTHORITY,
                 Bundle.EMPTY,
                 60);
     }

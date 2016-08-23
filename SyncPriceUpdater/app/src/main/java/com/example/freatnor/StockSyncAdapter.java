@@ -7,9 +7,11 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.example.freatnor.external_contracts.StockPortfolioContract;
 import com.example.freatnor.models.StockQuote;
 import com.google.gson.Gson;
 
@@ -23,6 +25,8 @@ import okhttp3.Response;
  * Created by Jonathan Taylor on 8/22/16.
  */
 public class StockSyncAdapter extends AbstractThreadedSyncAdapter {
+
+    private static final String TAG = "StockSyncAdapter";
 
     private ContentResolver mContentResolver;
     public static final String CALLBACK_NAME = "result";
@@ -40,37 +44,41 @@ public class StockSyncAdapter extends AbstractThreadedSyncAdapter {
 
     @Override
     public void onPerformSync(Account account, Bundle bundle, String s, ContentProviderClient contentProviderClient, SyncResult syncResult) {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url("http://api.nytimes.com/svc/news/v3/content/all/all/all.json?limit=20&api-key=05af8d5d9e5a4decafd7a8bc32b6b076")
-                .build();
+        Cursor cursor = mContentResolver.query(StockPortfolioContract.Stocks.CONTENT_URI, null, null, null, null);
 
-        try {
-            Response response = client.newCall(request).execute();
-            if(!response.isSuccessful()){
-                throw new IOException("Response result not successful " + response);
+        if(cursor.moveToFirst()) {
+            while (!cursor.isAfterLast()) {
+                //loop through and call the endpoint for each symbol in the database
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url(QUOTE_URL + cursor.getString(cursor.getColumnIndex(StockPortfolioContract.Stocks.COLUMN_STOCK_SYMBOL)))
+                        .build();
+
+                try {
+                    Response response = client.newCall(request).execute();
+                    if (!response.isSuccessful()) {
+                        throw new IOException("Response result not successful " + response);
+                    }
+                    //grab the price and insert it into the external db
+                    mContentResolver.delete(StockPortfolioContract.Stocks.CONTENT_URI, null, null);
+                    Gson gson = new Gson();
+                    String responseBody = response.body().string();
+                    String trimmedResponse = responseBody.substring(CALLBACK_NAME.length(), responseBody.length() - 2);
+                    StockQuote result = gson.fromJson(trimmedResponse, StockQuote.class);
+
+                    ContentValues values = new ContentValues();
+                    values.put(StockPortfolioContract.Stocks.COLUMN_PRICE, result.getLastPrice());
+                    mContentResolver.update(StockPortfolioContract.Stocks.CONTENT_URI, values,
+                            StockPortfolioContract.Stocks._ID, new String[]{cursor.getString(cursor.getColumnIndex(StockPortfolioContract.Stocks._ID))});
+                    Log.d(TAG, "onPerformSync: updated " + cursor.getColumnIndex(StockPortfolioContract.Stocks.COLUMN_STOCK_SYMBOL) +
+                    " to have the price " + result.getLastPrice());
+
+
+                } catch (IOException e) {
+                    Log.e(TAG, "onPerformSync: Error after Markit Call", e);
+                }
+                cursor.moveToNext();
             }
-            //clear the DB to remove old data (could try and keep newer ones)
-            mContentResolver.delete(Content_URI, null, null);
-            Gson gson = new Gson();
-            String responseBody = response.body().string();
-            String trimmedResponse = responseBody.substring(CALLBACK_NAME.length(), responseBody.length() - 2);
-            StockQuote result = gson.fromJson(trimmedResponse, StockQuote.class);
-
-            ContentValues values = new ContentValues();
-            values.put()
-
-            for (NewsItem item: result.getResults()) {
-                ContentValues values = new ContentValues();
-                values.put(NewsDBHelper.COLUMN_TITLE, item.getTitle());
-                mContentResolver.insert(NewsContentProvider.CONTENT_URI, values);
-
-                Log.d(TAG, "onPerformSync: Latest story - " + item.getTitle());
-            }
-
-
-        } catch (IOException e) {
-            Log.e(TAG, "onPerformSync: Error after NYT API call", e);
         }
     }
 }
