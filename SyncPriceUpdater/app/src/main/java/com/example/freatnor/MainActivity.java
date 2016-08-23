@@ -12,9 +12,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.example.freatnor.external_contracts.StockPortfolioContract;
 import com.example.freatnor.presenters.StocksCursorAdapter;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -23,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private ListView mListView;
     private StocksCursorAdapter mCursorAdapter;
+    private TextView mTimeUpdated;
 
     // Constants
     // Account type
@@ -37,7 +43,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mAccount = createSyncAccount(this);
         mListView = (ListView) findViewById(R.id.list_view);
+        mTimeUpdated = (TextView) findViewById(R.id.last_updated_text);
 
         getSupportLoaderManager().initLoader(STOCKS_LOADER, null, this);
 
@@ -103,6 +111,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mCursorAdapter.changeCursor(data);
+        Date currentTime = new Date(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm:ss aaa", Locale.US);
+        mTimeUpdated.setText("Last Updated: " + sdf.format(currentTime));
+
     }
 
     @Override

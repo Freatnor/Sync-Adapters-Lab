@@ -45,6 +45,7 @@ public class StockSyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle bundle, String s, ContentProviderClient contentProviderClient, SyncResult syncResult) {
         Cursor cursor = mContentResolver.query(StockPortfolioContract.Stocks.CONTENT_URI, null, null, null, null);
+        Log.d(TAG, "onPerformSync: got a cursor with rows - " + cursor.getCount());
 
         if(cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
